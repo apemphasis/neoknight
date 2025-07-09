@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphic
 from PySide6.QtGui import QBrush, QPen, QColor
 from PySide6.QtCore import Qt, QTimer
 from entity import Entity 
+from gameField import GameField
 import random
 
 class GameWindow(QMainWindow):
@@ -10,7 +11,9 @@ class GameWindow(QMainWindow):
         super().__init__()
         
         # Настройки окна (полноэкранный режим)
-        self.showFullScreen()
+        self.fixed_screen_width = 1200
+        self.fixed_screen_height = 700
+        self.setFixedSize(1200, 700)
         self.setWindowTitle("NeoKnight")
         
         # Размер игрового поля (квадрат 600x600)
@@ -21,7 +24,7 @@ class GameWindow(QMainWindow):
         self.scene.setBackgroundBrush(QBrush(QColor("#333333")))  # Серый фон
 
         # Игровое поле (белый квадрат по центру)
-        self.game_field = QGraphicsRectItem(0, 0, self.game_size, self.game_size)
+        self.game_field = GameField(0, 0, self.game_size, self.game_size)
         self.game_field.setBrush(QBrush(Qt.white))
         self.game_field.setPen(QPen(Qt.black))
         self.scene.addItem(self.game_field)
@@ -60,20 +63,28 @@ class GameWindow(QMainWindow):
         self.timer.start(16)  # ~60 FPS
     
     def keyPressEvent(self, event):
+        if event.key() == Qt.Key_N:
+            self.delete_en()
         if event.key() in self.keys_pressed:
             self.keys_pressed[event.key()] = True
+        super().keyPressEvent(event)
     
     def keyReleaseEvent(self, event):
         if event.key() in self.keys_pressed:
             self.keys_pressed[event.key()] = False
+        super().keyReleaseEvent(event)
+
+    def delete_en(self):
+        for e in self.Enemies:
+            self.scene.removeItem(e.get_regdoll())
 
     def generate_enemies(self, number):
         enemies = []
-        for i in range(number):
+        for _ in range(number):
             e = Entity(self.scene, 20, 20, 1, width=10, height=10, color=Qt.red)
 
-            field_x = (self.width() - self.game_size) // 2
-            field_y = (self.height() - self.game_size) // 2
+            field_x = (self.fixed_screen_width - self.game_size) // 2
+            field_y = (self.fixed_screen_height - self.game_size) // 2
             min_x = field_x
             max_x = field_x + self.game_size - e.get_width()
             min_y = field_y
@@ -89,7 +100,7 @@ class GameWindow(QMainWindow):
     
     def render_hero(self):
         # Получаем текущие координаты персонажа
-        x = self.Hero.get_x()
+        x = self.Hero.get_x() 
         y = self.Hero.get_y()
         move_speed = self.Hero.get_speed()
 
@@ -114,14 +125,20 @@ class GameWindow(QMainWindow):
         # Обновляем позицию
         self.Hero.move(x, y)
 
+    def attac_hero(self):
+        print(self.Hero.damage)
+
     def render_enemies(self):
-        hero_x = self.Hero.get_x()
-        hero_y = self.Hero.get_y()
+        hero_x = self.Hero.get_x() + self.Hero.get_width() // 2
+        hero_y = self.Hero.get_y() + self.Hero.get_height() // 2
         
         for enemy in self.Enemies:
             x = enemy.get_x()
             y = enemy.get_y()
             speed = enemy.get_speed()
+
+            # if self.check_cross(enemy, self.Enemies) == True:
+            #     continue
 
             # Границы игрового поля
             field_x = (self.width() - self.game_size) // 2
@@ -141,6 +158,16 @@ class GameWindow(QMainWindow):
                 y += speed
             
             enemy.move(x, y)
+
+    # def check_cross(self, entity, mass):
+    #     for e in mass:
+    #         x = (e.get_x() + e.get_width() // 2) - (entity.get_x() + entity.get_width() // 2)
+    #         y = (e.get_y() + e.get_height() // 2) - (entity.get_y() + entity.get_height() // 2)
+    #         r = max(e.get_width(), e.get_height()) + 15
+
+    #         if x ** 2 + y ** 2 < r ** 2:
+    #             return True
+    #         return False
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

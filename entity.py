@@ -31,3 +31,6 @@ class Entity:
     
     def get_speed(self):
         return self.speed
+    
+    def get_regdoll(self):
+        return self.regdoll
