@@ -138,6 +138,7 @@ class GameScene(QGraphicsScene):
         self.generate_hero()
         self.generate_health()
         self.wave_generate()
+        self.update_current_coins()
         self.addItem(self.arena_group)
         self.timer.timeout.connect(self.render_hero)
         self.timer.timeout.connect(self.render_enemies)
@@ -183,7 +184,6 @@ class GameScene(QGraphicsScene):
         self.removeItem(self.arena_group)
         self.addItem(self.lobby_group)
         self.timer.timeout.disconnect(self.wave_generate)
-
         self.update_stat()
 
     def keyPressEvent(self, event):
@@ -353,3 +353,5 @@ class GameScene(QGraphicsScene):
         self.stats["coins"] = str(int(self.stats["coins"]) + self.current_money)
         self.record_txt.setPlainText(f"Рекорд прожитых волн: {self.stats["record"]}")
         self.coin_txt.setPlainText(f"Монеты: {self.stats["coins"]}")
+        self.current_money = 0
+        self.current_wave = 0
