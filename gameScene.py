@@ -90,11 +90,28 @@ class GameScene(QGraphicsScene):
         self.addItem(self.lobby_group)
         
         
+        self.current_health = int(self.stats["health"])
+        self.current_wave = 0
+        self.current_money = 0
+
         self.arena_group = QGraphicsItemGroup()
         
         self.arena_back = GameField(0, 0, 600, 600)
         self.arena_group.addToGroup(self.arena_back)
         
+        self.wave_txt = QGraphicsTextItem(f"Волна: {self.current_wave}")
+        self.wave_txt.setDefaultTextColor(Qt.white)
+        self.wave_txt.setFont(self.custom_font)
+        
+        self.arena_group.addToGroup(self.wave_txt)
+        self.wave_txt.setPos(20, 20)
+
+        self.current_coin_txt = QGraphicsTextItem(f"Монеты: {self.current_money}")
+        self.current_coin_txt.setDefaultTextColor(Qt.white)
+        self.current_coin_txt.setFont(self.custom_font)
+        
+        self.arena_group.addToGroup(self.current_coin_txt)
+        self.current_coin_txt.setPos(600 - 20 - self.current_coin_txt.boundingRect().width(), 20)
 
         self.enemies = []
 
@@ -112,9 +129,6 @@ class GameScene(QGraphicsScene):
             Qt.Key_D: False
         } 
 
-        self.current_health = int(self.stats["health"])
-        self.current_wave = 1
-        self.current_money = int(self.stats["coins"])
         # Таймер для обработки движения
         self.timer = QTimer(self)
         self.timer.start(16)  # ~60 FPS
@@ -124,7 +138,6 @@ class GameScene(QGraphicsScene):
         self.generate_hero()
         self.generate_health()
         self.wave_generate()
-        self.generate_info()
         self.addItem(self.arena_group)
         self.timer.timeout.connect(self.render_hero)
         self.timer.timeout.connect(self.render_enemies)
@@ -133,29 +146,18 @@ class GameScene(QGraphicsScene):
     def wave_generate(self):
         if self.current_health >= 0:
             if len(self.enemies) == 0:
-                print(self.current_wave)
+                self.current_wave += 1
+                self.wave_txt.setPlainText(f"Волна: {self.current_wave}")
                 n = 4
                 if self.current_wave <= 10:
                     n += self.current_wave
                 else:
                     n += 10
                 self.generate_enemies(n)
-                self.generate_info
+                
 
-    def generate_info(self):
-        wave_txt = QGraphicsTextItem(f"Рекорд прожитых волн: {self.current_wave}")
-        wave_txt.setDefaultTextColor(Qt.white)
-        wave_txt.setFont(self.custom_font)
-        
-        self.arena_group.addToGroup(wave_txt)
-        wave_txt.setPos(20, 20)
-
-        coin_txt = QGraphicsTextItem(f"Монеты: {self.current_money}")
-        coin_txt.setDefaultTextColor(Qt.white)
-        coin_txt.setFont(self.custom_font)
-        
-        self.arena_group.addToGroup(coin_txt)
-        coin_txt.setPos(600 - 20 - coin_txt.boundingRect().width(), 20)
+    def update_current_coins(self):
+        self.current_coin_txt.setPlainText(f"Монеты: {self.current_money}")
 
     def generate_hero(self):
         self.hero = AnimatedSprite("source/hero/hero.png", 96, 96, 4, [10, 16, 3, 4])
@@ -321,7 +323,7 @@ class GameScene(QGraphicsScene):
                     enemy.die()
                     self.enemies.remove(enemy)
                     self.current_money += 1
-                    self.generate_info()
+                    self.update_current_coins()
                 else:
                     enemy.set_animation(3, loop=False)
 
@@ -348,6 +350,6 @@ class GameScene(QGraphicsScene):
     def update_stat(self):
         if self.current_wave > int(self.stats["record"]):
             self.stats["record"] = str(self.current_wave)
-        self.stats["coins"] = self.current_money
+        self.stats["coins"] = str(int(self.stats["coins"]) + self.current_money)
         self.record_txt.setPlainText(f"Рекорд прожитых волн: {self.stats["record"]}")
         self.coin_txt.setPlainText(f"Монеты: {self.stats["coins"]}")
