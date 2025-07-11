@@ -158,7 +158,7 @@ class GameScene(QGraphicsScene):
         coin_txt.setPos(600 - 20 - coin_txt.boundingRect().width(), 20)
 
     def generate_hero(self):
-        self.hero = AnimatedSprite("source/hero/hero.png", 96, 96, 4, [10, 16, 7, 4])
+        self.hero = AnimatedSprite("source/hero/hero.png", 96, 96, 4, [10, 16, 3, 4])
         self.hero.set_animation(0, force_interrupt=True)
         self.arena_group.addToGroup(self.hero)
         #self.hero_x = (self.arena_back.boundingRect().width() - 96) // 2
@@ -187,7 +187,7 @@ class GameScene(QGraphicsScene):
     def keyPressEvent(self, event):
         if event.key() in self.keys_pressed:
             if self.hero != None and self.hero.current_animation == 0:
-                self.hero.set_animation(1, force_interrupt=True)
+                self.hero.set_animation(1, force_interrupt=False)
             self.keys_pressed[event.key()] = True
         super().keyPressEvent(event)
     
@@ -196,7 +196,7 @@ class GameScene(QGraphicsScene):
             self.keys_pressed[event.key()] = False
         if all(f is False for f in self.keys_pressed.values()):
             if self.hero != None:
-                self.hero.set_animation(0, force_interrupt=True)
+                self.hero.set_animation(0, force_interrupt=False)
         super().keyReleaseEvent(event)
 
     def render_hero(self):
@@ -315,7 +315,7 @@ class GameScene(QGraphicsScene):
             e_v = (x - hero_x, y - hero_y)
             cos_value = (h_v[0] * e_v[0] + h_v[1] * e_v[1]) / ((h_v[0] ** 2 + h_v[1] ** 2) * (e_v[0] ** 2 + e_v[1] ** 2)) ** 0.5
             arccos = math.acos(cos_value)
-            if arccos < 0.5 and (e_v[0] ** 2 + e_v[1] ** 2) ** 0.5 < 70:
+            if arccos < 0.5 and (e_v[0] ** 2 + e_v[1] ** 2) ** 0.5 < 100:
                 enemy.get_damage(int(self.stats["damage"]))
                 if enemy.is_dead():
                     enemy.die()
@@ -333,7 +333,6 @@ class GameScene(QGraphicsScene):
         e_v = (x - hero_x, y - hero_y)
         if (e_v[0] ** 2 + e_v[1] ** 2) ** 0.5 < 40:
             enemy.set_animation(2, loop=False)
-            self.hero.set_animation(3, loop=False)
             self.current_health -= 1
             if self.current_health <= 0:
                 self.end_game()

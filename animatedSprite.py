@@ -45,7 +45,7 @@ class AnimatedSprite(QGraphicsPixmapItem):
                 animation_frames.append(frame)
             self.frames.append(animation_frames)
 
-    def set_animation(self, animation_index, loop=True, force_interrupt=True):
+    def set_animation(self, animation_index, loop=True, force_interrupt=False):
         """
         Переключает анимацию с приоритетом.
         Параметры:
