@@ -22,11 +22,6 @@ class GameWindow(QMainWindow):
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setCentralWidget(self.view)
-        
-        
-    def delete_en(self):
-        for e in self.Enemies:
-            self.scene.removeItem(e.get_regdoll())
 
 
 if __name__ == "__main__":

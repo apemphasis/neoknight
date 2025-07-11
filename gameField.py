@@ -11,6 +11,6 @@ class GameField(QGraphicsRectItem):
     
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.scene().attack_hero()
+            self.scene().attack_hero(event.pos())
         # Важно вызвать родительский метод, чтобы не блокировать события
         super().mousePressEvent(event)
