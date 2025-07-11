@@ -15,7 +15,7 @@ class GameScene(QGraphicsScene):
 
         font_id = QFontDatabase.addApplicationFont("source/font/MUNRO-sharedassets0.assets-232.otf")
         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-        custom_font = QFont(font_family, 14)
+        self.custom_font = QFont(font_family, 14)
 
         self.stats = {
                     "record": "0",
@@ -55,13 +55,13 @@ class GameScene(QGraphicsScene):
         
         self.record_txt = QGraphicsTextItem(f"Рекорд прожитых волн: {self.stats["record"]}")
         self.record_txt.setDefaultTextColor(Qt.white)
-        self.record_txt.setFont(custom_font)
+        self.record_txt.setFont(self.custom_font)
         self.record_txt.setPos(20, 20)
         self.stat_group.addToGroup(self.record_txt)
 
         self.coin_txt = QGraphicsTextItem(f"Монеты: {self.stats["coins"]}")
         self.coin_txt.setDefaultTextColor(Qt.white)
-        self.coin_txt.setFont(custom_font)
+        self.coin_txt.setFont(self.custom_font)
         self.coin_txt.setPos(stat_back.boundingRect().width() - 20 - self.coin_txt.boundingRect().width(), 20)
         self.stat_group.addToGroup(self.coin_txt)
 
@@ -71,13 +71,13 @@ class GameScene(QGraphicsScene):
 
         damage_txt = QGraphicsTextItem(f"Урон: {self.stats["damage"]}")
         damage_txt.setDefaultTextColor(Qt.white)
-        damage_txt.setFont(custom_font)
+        damage_txt.setFont(self.custom_font)
         damage_txt.setPos(stat_back.boundingRect().width() // 2 + 20, 220)
         self.stat_group.addToGroup(damage_txt)
 
         health_txt = QGraphicsTextItem(f"Здоровье: {self.stats["health"]}")
         health_txt.setDefaultTextColor(Qt.white)
-        health_txt.setFont(custom_font)
+        health_txt.setFont(self.custom_font)
         health_txt.setPos(stat_back.boundingRect().width() // 2 - 20 - health_txt.boundingRect().width(), 220)
         self.stat_group.addToGroup(health_txt)
 
@@ -112,7 +112,7 @@ class GameScene(QGraphicsScene):
             Qt.Key_D: False
         } 
 
-        self.current_health = 7
+        self.current_health = int(self.stats["health"])
         self.current_wave = 1
         self.current_money = int(self.stats["coins"])
         # Таймер для обработки движения
@@ -124,6 +124,7 @@ class GameScene(QGraphicsScene):
         self.generate_hero()
         self.generate_health()
         self.wave_generate()
+        self.generate_info()
         self.addItem(self.arena_group)
         self.timer.timeout.connect(self.render_hero)
         self.timer.timeout.connect(self.render_enemies)
@@ -132,7 +133,6 @@ class GameScene(QGraphicsScene):
     def wave_generate(self):
         if self.current_health >= 0:
             if len(self.enemies) == 0:
-                self.current_wave += 1
                 print(self.current_wave)
                 n = 4
                 if self.current_wave <= 10:
@@ -140,6 +140,22 @@ class GameScene(QGraphicsScene):
                 else:
                     n += 10
                 self.generate_enemies(n)
+                self.generate_info
+
+    def generate_info(self):
+        wave_txt = QGraphicsTextItem(f"Рекорд прожитых волн: {self.current_wave}")
+        wave_txt.setDefaultTextColor(Qt.white)
+        wave_txt.setFont(self.custom_font)
+        
+        self.arena_group.addToGroup(wave_txt)
+        wave_txt.setPos(20, 20)
+
+        coin_txt = QGraphicsTextItem(f"Монеты: {self.current_money}")
+        coin_txt.setDefaultTextColor(Qt.white)
+        coin_txt.setFont(self.custom_font)
+        
+        self.arena_group.addToGroup(coin_txt)
+        coin_txt.setPos(600 - 20 - coin_txt.boundingRect().width(), 20)
 
     def generate_hero(self):
         self.hero = AnimatedSprite("source/hero/hero.png", 96, 96, 4, [10, 16, 7, 4])
@@ -305,7 +321,7 @@ class GameScene(QGraphicsScene):
                     enemy.die()
                     self.enemies.remove(enemy)
                     self.current_money += 1
-                    print(self.current_money)
+                    self.generate_info()
                 else:
                     enemy.set_animation(3, loop=False)
 
