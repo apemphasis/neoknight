@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QGraphicsItemGroup, QGraphicsRectItem, QGraphicsTextItem
+from PySide6.QtWidgets import QGraphicsItemGroup, QGraphicsRectItem, QGraphicsTextItem, QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QPen, QFontDatabase, QFont
 
@@ -26,5 +26,7 @@ class CustomButton(QGraphicsItemGroup):
     def mousePressEvent(self, event):
         if self.text == "Играть":
             self.scene().start_game()
+        if self.text == "Выйти":
+            QApplication.quit()
         print(f"Группа {self.text} кликнута! Pos:", event.pos())
         super().mousePressEvent(event)

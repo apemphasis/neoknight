@@ -154,6 +154,7 @@ class GameScene(QGraphicsScene):
                     n += self.current_wave
                 else:
                     n += 10
+                print("new wave", self.enemies)
                 self.generate_enemies(n)
                 
 
@@ -175,7 +176,7 @@ class GameScene(QGraphicsScene):
         for e in self.enemies:
             e.clear_timer()
             self.removeItem(e)
-            e = None
+            
         self.enemies.clear()
         self.removeItem(self.hero)
         self.hero = None
@@ -184,6 +185,7 @@ class GameScene(QGraphicsScene):
         self.removeItem(self.arena_group)
         self.addItem(self.lobby_group)
         self.timer.timeout.disconnect(self.wave_generate)
+        print("game end", self.enemies)
         self.update_stat()
 
     def keyPressEvent(self, event):
