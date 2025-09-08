@@ -1,9 +1,14 @@
 from PySide6.QtWidgets import QGraphicsItemGroup, QGraphicsRectItem, QGraphicsTextItem, QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl, QTimer
 from PySide6.QtGui import QBrush, QPen, QFontDatabase, QFont
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+import json
 
 class CustomButton(QGraphicsItemGroup):
     def __init__(self, parent=None, text="Button", width=350, height=80, font_size=24):
+        
+        self.player = QMediaPlayer()
+        self.player.setSource(QUrl.fromLocalFile("source/music/02-The-Prodigy-Breathe.wav"))
         super().__init__(parent)
         self.text = text
         background = QGraphicsRectItem(0, 0, width, height)
@@ -24,9 +29,21 @@ class CustomButton(QGraphicsItemGroup):
         self.setAcceptHoverEvents(True) 
     
     def mousePressEvent(self, event):
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
+        self.player.setSource(QUrl.fromLocalFile('source/music/off-button-on-table-lamp.wav'))
+        self.player.play()
         if self.text == "Играть":
             self.scene().start_game()
         if self.text == "Выйти":
+            with open('source\save\stat.json', 'w', encoding='utf-8') as file:
+                json.dump(self.scene().stats, file, ensure_ascii=False, indent=4)
             QApplication.quit()
-        print(f"Группа {self.text} кликнута! Pos:", event.pos())
+        if self.text == "Улучшить за 10 монет":
+            self.scene().upgrade_hero()
+        if self.text == "Вернуться в лобби":
+            self.scene().goto_lobby()
+        if self.text == "Новая Игра":
+            self.scene().new_game()
         super().mousePressEvent(event)

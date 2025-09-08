@@ -1,13 +1,15 @@
 import sys
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsRectItem, QGraphicsPixmapItem, QGraphicsItemGroup, QGraphicsTextItem
 from PySide6.QtGui import QBrush, QPen, QPixmap, QFont,  QFontDatabase, QTransform
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QUrl
 from gameField import GameField
 import random
 from button import CustomButton
 from animatedSprite import AnimatedSprite
 from enemy import Enemy
 import math
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+import json
 
 class GameScene(QGraphicsScene):
     def __init__(self, parent=None, width=1200, height=700):
@@ -17,13 +19,9 @@ class GameScene(QGraphicsScene):
         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
         self.custom_font = QFont(font_family, 14)
 
-        self.stats = {
-                    "record": "0",
-                    "coins": "0",
-                    "damage": "10",
-                    "health": "10",
-                }
-
+        self.stats = {}
+        with open('source\save\stat.json', 'r', encoding='utf-8') as file:
+                self.stats = json.load(file)
 
         background = QPixmap("source/bg.png")
         background = background.scaled(width, height, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
@@ -40,18 +38,21 @@ class GameScene(QGraphicsScene):
         self.new_game_btn.setPos(0, 110)
         self.lobby_group.addToGroup(self.new_game_btn)
 
+        self.settings_btn = CustomButton(text="Настройки")
+        self.settings_btn.setPos(0, 220)
+        self.lobby_group.addToGroup(self.settings_btn)
+
         self.exit_btn = CustomButton(text="Выйти")
-        self.exit_btn.setPos(0, 220)
+        self.exit_btn.setPos(0, 330)
         self.lobby_group.addToGroup(self.exit_btn)
 
 
         self.stat_group = QGraphicsItemGroup()
     
-        stat_back = QGraphicsRectItem(0, 0, 400, 300)
+        stat_back = QGraphicsRectItem(0, 0, 400, 410)
         stat_back.setBrush(QBrush("#2D034D"))
         stat_back.setPen(QPen("#673A8A"))
         self.stat_group.addToGroup(stat_back)
-
         
         self.record_txt = QGraphicsTextItem(f"Рекорд прожитых волн: {self.stats["record"]}")
         self.record_txt.setDefaultTextColor(Qt.white)
@@ -66,20 +67,25 @@ class GameScene(QGraphicsScene):
         self.stat_group.addToGroup(self.coin_txt)
 
         anim_lobby = AnimatedSprite("source/hero/lobby2.png", 192, 192, 1, [10])
-        anim_lobby.setPos((stat_back.boundingRect().width() - 192) // 2, stat_back.boundingRect().height() // 2 - 130)
+        anim_lobby.setPos((stat_back.boundingRect().width() - 192) // 2, stat_back.boundingRect().height() // 2 - 170)
         self.stat_group.addToGroup(anim_lobby)
 
-        damage_txt = QGraphicsTextItem(f"Урон: {self.stats["damage"]}")
-        damage_txt.setDefaultTextColor(Qt.white)
-        damage_txt.setFont(self.custom_font)
-        damage_txt.setPos(stat_back.boundingRect().width() // 2 + 20, 220)
-        self.stat_group.addToGroup(damage_txt)
+        self.damage_txt = QGraphicsTextItem(f"Урон: {self.stats["damage"]}")
+        self.damage_txt.setDefaultTextColor(Qt.white)
+        self.damage_txt.setFont(self.custom_font)
+        self.damage_txt.setPos(stat_back.boundingRect().width() // 2 + 20, 260)
+        self.stat_group.addToGroup(self.damage_txt)
 
-        health_txt = QGraphicsTextItem(f"Здоровье: {self.stats["health"]}")
-        health_txt.setDefaultTextColor(Qt.white)
-        health_txt.setFont(self.custom_font)
-        health_txt.setPos(stat_back.boundingRect().width() // 2 - 20 - health_txt.boundingRect().width(), 220)
-        self.stat_group.addToGroup(health_txt)
+        self.health_txt = QGraphicsTextItem(f"Здоровье: {self.stats["health"]}")
+        self.health_txt.setDefaultTextColor(Qt.white)
+        self.health_txt.setFont(self.custom_font)
+        self.health_txt.setPos(stat_back.boundingRect().width() // 2 - 20 - self.health_txt.boundingRect().width(), 260)
+        self.stat_group.addToGroup(self.health_txt)
+
+        self.upgrade_btn = CustomButton(text="Улучшить за 10 монет", font_size=16)
+        self.upgrade_btn.setPos((stat_back.boundingRect().width() - 350) // 2, 310)
+        self.stat_group.addToGroup(self.upgrade_btn)
+        self.stat_group.setHandlesChildEvents(False)  # Отключаем передачу событий детям 
 
         self.lobby_group.addToGroup(self.stat_group)
         self.stat_group.setPos(600, 0)
@@ -93,6 +99,7 @@ class GameScene(QGraphicsScene):
         self.current_health = int(self.stats["health"])
         self.current_wave = 0
         self.current_money = 0
+
 
         self.arena_group = QGraphicsItemGroup()
         
@@ -120,6 +127,41 @@ class GameScene(QGraphicsScene):
         self.arena_group.setHandlesChildEvents(False)  # Отключаем передачу событий детям 
         self.arena_group.setAcceptHoverEvents(True) 
         
+
+        self.gost_group = QGraphicsItemGroup()
+
+        gost_back = QGraphicsRectItem(0, 0, 550, 400)
+        gost_back.setBrush(QBrush("#2D034D"))
+        gost_back.setPen(QPen("#673A8A"))
+        self.gost_group.addToGroup(gost_back)
+
+        gost_text = QGraphicsTextItem("Game Over")
+        gost_text.setDefaultTextColor(Qt.white)
+        gost_text.setFont(QFont(font_family, 48))
+        gost_text.setPos((gost_back.boundingRect().width()-gost_text.boundingRect().width())//2, 50)
+        self.gost_group.addToGroup(gost_text)
+
+        self.gost_wave = QGraphicsTextItem("Волна: 5")
+        self.gost_wave.setDefaultTextColor(Qt.white)
+        self.gost_wave.setFont(QFont(font_family, 20))
+        self.gost_wave.setPos((gost_back.boundingRect().width()-self.gost_wave.boundingRect().width())//2, 155)
+        self.gost_group.addToGroup(self.gost_wave)
+
+        self.gost_coin = QGraphicsTextItem("Собрано монет: 35")
+        self.gost_coin.setDefaultTextColor(Qt.white)
+        self.gost_coin.setFont(QFont(font_family, 20))
+        self.gost_coin.setPos((gost_back.boundingRect().width()-self.gost_coin.boundingRect().width())//2, 205)
+        self.gost_group.addToGroup(self.gost_coin)
+
+        self.gost_btn = CustomButton(text="Вернуться в лобби")
+        self.gost_btn.setPos((gost_back.boundingRect().width()-self.gost_btn.boundingRect().width())//2, gost_back.boundingRect().height() - self.gost_btn.boundingRect().height() - 30)
+        self.gost_group.addToGroup(self.gost_btn)
+
+        self.gost_group.setPos((self.width() - gost_back.boundingRect().width()) // 2,
+                                (self.height() - gost_back.boundingRect().height()) // 2)
+        self.gost_group.setHandlesChildEvents(False)  # Отключаем передачу событий детям 
+        self.gost_group.setAcceptHoverEvents(True) 
+
         # Для плавного движения
         self.move_speed = 3
         self.keys_pressed = {
@@ -157,7 +199,6 @@ class GameScene(QGraphicsScene):
                 print("new wave", self.enemies)
                 self.generate_enemies(n)
                 
-
     def update_current_coins(self):
         self.current_coin_txt.setPlainText(f"Монеты: {self.current_money}")
 
@@ -182,12 +223,12 @@ class GameScene(QGraphicsScene):
         self.hero = None
         self.timer.timeout.disconnect(self.render_hero)
         self.timer.timeout.disconnect(self.render_enemies)
-        self.removeItem(self.arena_group)
-        self.addItem(self.lobby_group)
         self.timer.timeout.disconnect(self.wave_generate)
-        print("game end", self.enemies)
-        self.update_stat()
-
+        self.removeItem(self.arena_group)
+        self.addItem(self.gost_group)
+        self.gost_wave.setPlainText(f'Волна: {self.current_wave}')
+        self.gost_coin.setPlainText(f'Собрано монет: {self.current_money}')
+        
     def keyPressEvent(self, event):
         if event.key() in self.keys_pressed:
             if self.hero != None and self.hero.current_animation == 0:
@@ -311,6 +352,9 @@ class GameScene(QGraphicsScene):
         hero_x = self.hero.pos().x() + 48
         hero_y = self.hero.pos().y() + 48
         h_v = (position.x() - hero_x, position.y() - hero_y)
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
         for enemy in self.enemies:
             if enemy.is_dead():
                 continue
@@ -320,6 +364,8 @@ class GameScene(QGraphicsScene):
             cos_value = (h_v[0] * e_v[0] + h_v[1] * e_v[1]) / ((h_v[0] ** 2 + h_v[1] ** 2) * (e_v[0] ** 2 + e_v[1] ** 2)) ** 0.5
             arccos = math.acos(cos_value)
             if arccos < 0.5 and (e_v[0] ** 2 + e_v[1] ** 2) ** 0.5 < 100:
+                self.player.setSource(QUrl.fromLocalFile('source/music/ripe-juicy-fruit-cut-in-half.wav'))
+                self.player.play()
                 enemy.get_damage(int(self.stats["damage"]))
                 if enemy.is_dead():
                     enemy.die()
@@ -328,6 +374,9 @@ class GameScene(QGraphicsScene):
                     self.update_current_coins()
                 else:
                     enemy.set_animation(3, loop=False)
+            else:
+                self.player.setSource(QUrl.fromLocalFile('source/music/slicing-sword-strike.wav'))
+                self.player.play()
 
     def attack_enemy(self, enemy):
         hero_x = self.hero.pos().x() + 48
@@ -337,6 +386,11 @@ class GameScene(QGraphicsScene):
         e_v = (x - hero_x, y - hero_y)
         if (e_v[0] ** 2 + e_v[1] ** 2) ** 0.5 < 40:
             enemy.set_animation(2, loop=False)
+            self.player = QMediaPlayer()
+            self.audio_output = QAudioOutput()
+            self.player.setAudioOutput(self.audio_output)
+            self.player.setSource(QUrl.fromLocalFile('source/music/attack-zombie-roar.wav'))
+            self.player.play()
             self.current_health -= 1
             if self.current_health <= 0:
                 self.end_game()
@@ -355,5 +409,34 @@ class GameScene(QGraphicsScene):
         self.stats["coins"] = str(int(self.stats["coins"]) + self.current_money)
         self.record_txt.setPlainText(f"Рекорд прожитых волн: {self.stats["record"]}")
         self.coin_txt.setPlainText(f"Монеты: {self.stats["coins"]}")
+        self.damage_txt.setPlainText(f"Урон: {self.stats["damage"]}")
+        self.health_txt.setPlainText(f"Здоровье: {self.stats["health"]}")
         self.current_money = 0
         self.current_wave = 0
+
+    def upgrade_hero(self):
+        if int(self.stats["coins"]) >= 10:
+            self.stats["coins"] = str(int(self.stats["coins"]) - 10)
+            self.stats["damage"] = str(int(self.stats["damage"]) + 1)
+            self.stats["health"] = str(int(self.stats["health"]) + 1)
+            self.update_stat()
+
+    def goto_lobby(self):
+        self.removeItem(self.gost_group)
+        self.addItem(self.lobby_group)
+        self.update_stat()
+
+    def new_game(self):
+        self.stats = {
+            "record": "0",
+            "coins": "0",
+            "damage": "10",
+            "health": "10",
+            "mode": "0",
+            "volume": "100",
+            "fullscreen": "0"
+        }
+        with open('source\save\stat.json', 'w', encoding='utf-8') as file:
+                json.dump(self.stats, file, ensure_ascii=False, indent=4)
+        self.update_stat()
+        print("G\nG\nG\nG\nG\nG\nG\nG\nG\nG\nG\nG\nG\nG\nGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGggg")

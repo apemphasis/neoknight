@@ -22,7 +22,10 @@ class Enemy(AnimatedSprite):
             QTimer.singleShot(480, lambda: [self.scene().removeItem(self)])
 
     def attack(self):
-        self.scene().attack_enemy(self)
+        try:
+            self.scene().attack_enemy(self)
+        except Exception as exc:
+            pass 
         
     def clear_timer(self):
         self.etimer.stop()  # Останавливаем
