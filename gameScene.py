@@ -141,7 +141,7 @@ class GameScene(QGraphicsScene):
         gost_text.setPos((gost_back.boundingRect().width()-gost_text.boundingRect().width())//2, 50)
         self.gost_group.addToGroup(gost_text)
 
-        self.gost_wave = QGraphicsTextItem("Волна: 5")
+        self.gost_wave = QGraphicsTextItem("Пройдено волн: 5")
         self.gost_wave.setDefaultTextColor(Qt.white)
         self.gost_wave.setFont(QFont(font_family, 20))
         self.gost_wave.setPos((gost_back.boundingRect().width()-self.gost_wave.boundingRect().width())//2, 155)
@@ -226,7 +226,7 @@ class GameScene(QGraphicsScene):
         self.timer.timeout.disconnect(self.wave_generate)
         self.removeItem(self.arena_group)
         self.addItem(self.gost_group)
-        self.gost_wave.setPlainText(f'Волна: {self.current_wave}')
+        self.gost_wave.setPlainText(f'Пройдено волна: {self.current_wave}')
         self.gost_coin.setPlainText(f'Собрано монет: {self.current_money}')
         
     def keyPressEvent(self, event):
